@@ -7,7 +7,8 @@ realm = "shared"
 [dependencies]
 
 Profilestore = "sekuriyo-lotus/profilestore@1.0.4"
-React = "core-packages/react@0.0.1"
+React = "jsdotlua/react@17.2.1"
+ReactRoblox = "jsdotlua/react-roblox@17.2.1"
 
 
 [server-dependencies]
