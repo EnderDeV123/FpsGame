@@ -6,24 +6,22 @@
       "Shared": {
         "$path": "src/shared"
       },
-      "Packages":{
-        "$path":"Packages"
+      "Packages": {
+        "$path": "Packages"
       }
     },
     "ServerScriptService": {
-        "$path": "src/server",
-        "ServerPackages":{
-          "$path":"ServerPackages"
-        }
+      "$path": "src/server",
+      "ServerPackages": {
+        "$path": "ServerPackages"
+      }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": {
-        "Client": {
-          "$path": "src/client"
-        }
+        "$path": "src/client"
       },
-      "StarterCharacterScripts":{
-          "$path": "src/client/CharScript"
+      "StarterCharacterScripts": {
+        "$path": "src/client/CharScript"
       }
     }
   }
