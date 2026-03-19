@@ -40,23 +40,6 @@ function Gun:Fire(GunModel: Tool)
 	end
 
 	ShootEvent:FireServer(origin, direction, gunId)
-
-	self:PlayGfx(GunModel, direction)
-end
-
-function Gun:PlayGfx(Gunmodel: Tool, direction)
-	local BulletGFX = ReplicatedStorage:WaitForChild("GFX"):WaitForChild("BulletTrail"):Clone()
-	BulletGFX.Anchored = true
-	BulletGFX.Parent = workspace
-
-	local BulletPos = Gunmodel:FindFirstChild("BulletPos") or Gunmodel:FindFirstChild("Handle")
-	if not BulletPos then
-		warn("No BulletPos or Handle found")
-		return
-	end
-
-	local origin = BulletPos.Position
-	BulletTrailService:MoveBullet(BulletGFX, origin, direction)
 end
 
 return Gun

@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
 local Gun = require(ReplicatedStorage.Shared.Classes.Gun)
 local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
@@ -8,10 +9,15 @@ local RemotesFolder = ReplicatedStorage.Shared.Remotes
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 
-local Player = game.Players.LocalPlayer
+local Player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local CurrentAmmo = 0
+local ReserveAmmo = 0
+local CurrentGunName = ""
 
 -------------------------------------------------
--- CHARACTER UPDATE (FIX)
+-- CHARACTER UPDATE
 -------------------------------------------------
 local Char
 
@@ -42,6 +48,27 @@ local function GetGunFromConfig(GunTool)
 end
 
 -------------------------------------------------
+-- 🔥 RECOIL SYSTEM
+-------------------------------------------------
+local recoilOffset = Vector2.new(0, 0)
+local recoilRecoverySpeed = 8 -- higher = faster recovery
+
+game:GetService("RunService").RenderStepped:Connect(function(dt)
+	-- smooth recovery
+	recoilOffset = recoilOffset:Lerp(Vector2.new(0, 0), dt * recoilRecoverySpeed)
+
+	-- apply to camera
+	Camera.CFrame = Camera.CFrame * CFrame.Angles(math.rad(recoilOffset.Y), math.rad(recoilOffset.X), 0)
+end)
+
+local function ApplyRecoil(amount)
+	-- random side movement
+	local randomX = (math.random() - 0.5) * 2
+
+	recoilOffset += Vector2.new(randomX * amount * 0.5, amount)
+end
+
+-------------------------------------------------
 -- HOLD SHOOT
 -------------------------------------------------
 local Holding = false
@@ -59,8 +86,22 @@ local function ShootLoop()
 			break
 		end
 
+		-- ❌ STOP IF NO AMMO
+		if CurrentAmmo <= 0 then
+			-- optional: auto reload trigger
+			local gunId = GunTool:GetAttribute("Id")
+			if ReserveAmmo > 0 then
+				ReloadEvent:FireServer(gunId)
+			end
+			break
+		end
+
 		local gun = Gun.new(GunData.actualGun)
 		gun:Fire(GunTool)
+
+		-- 🔥 APPLY RECOIL
+		local recoilAmount = GunData.actualGun.recoil or 0.2
+		ApplyRecoil(recoilAmount)
 
 		task.wait(GunData.actualGun.DebounceTime or 0.2)
 	end
@@ -103,5 +144,9 @@ end)
 -- AMMO UI
 -------------------------------------------------
 UpdateAmmoEvent.OnClientEvent:Connect(function(current, reserve, gunname)
+	CurrentAmmo = current
+	ReserveAmmo = reserve
+	CurrentGunName = gunname
+
 	print(gunname .. " | Ammo: " .. current .. "/" .. reserve)
 end)

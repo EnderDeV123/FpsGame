@@ -1,16 +1,36 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
+local ShootServiceUtils = require(ServerScriptService.Utils.ShootServiceUtils)
 local ShootService = require(ReplicatedStorage.Shared.Services.ShootService)
 
 local ShootServer = {}
 
-function ShootServer:Shoot(player: Player, origin: Vector3, direction: Vector3, maxDistance: number, damage: number, rayparams: RaycastParams)
+function ShootServer:init()
+	ShootServiceUtils:CreateUtils()
+end
 
-	if typeof(origin) ~= "Vector3" then return end
-	if typeof(direction) ~= "Vector3" then return end
+ShootServer:init()
+
+function ShootServer:Shoot(
+	player: Player,
+	origin: Vector3,
+	direction: Vector3,
+	maxDistance: number,
+	damage: number,
+	rayparams: RaycastParams
+)
+	if typeof(origin) ~= "Vector3" then
+		return
+	end
+	if typeof(direction) ~= "Vector3" then
+		return
+	end
 
 	local character = player.Character
-	if not character then return end
+	if not character then
+		return
+	end
 
 	direction = direction.Unit -- 🔥 FIX
 
@@ -18,7 +38,7 @@ function ShootServer:Shoot(player: Player, origin: Vector3, direction: Vector3, 
 		rayparams = RaycastParams.new()
 		rayparams.FilterType = Enum.RaycastFilterType.Blacklist
 		rayparams.IgnoreWater = true
-		rayparams.FilterDescendantsInstances = {character}
+		rayparams.FilterDescendantsInstances = { character }
 	end
 
 	local result = ShootService:Shoot(origin, direction, maxDistance, rayparams)

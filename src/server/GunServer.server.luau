@@ -8,7 +8,7 @@ local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
 
 local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")
 
-local ShootEvent = ShootServiceUtils:CreateUtils()
+local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 
@@ -47,6 +47,19 @@ local function InitGunAmmo(player, gunId)
 	return PlayerAmmo[player][gunId]
 end
 
+Players.PlayerAdded:Connect(function(player)
+	-- make sure ammo table exists
+	PlayerAmmo[player] = PlayerAmmo[player] or {}
+
+	-- init ammo for all guns
+	for _, gunData in pairs(GunConfig.Guns) do
+		local ammoData = InitGunAmmo(player, gunData.Id)
+		if ammoData then
+			UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
+		end
+	end
+end)
+
 local function ReloadGun(player, gunId)
 	local gunData = GetGunById(gunId)
 	if not gunData then
@@ -74,6 +87,14 @@ local function ReloadGun(player, gunId)
 	ammoData.Reserve -= toLoad
 
 	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
+end
+
+local function GetGunBulletPos(Char)
+	for i, v in ipairs(Char:GetChildren()) do
+		if v:IsA("Tool") then
+			return v:FindFirstChild("BulletPos") or v:FindFirstChild("Handle")
+		end
+	end
 end
 
 -------------------------------------------------
@@ -110,6 +131,9 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 
 	local damage = gunData.actualGun.Damage or 10
 	ShootServer:Shoot(player, origin, direction, 1000, damage)
+	local BulletPos: BasePart = GetGunBulletPos(player.Character)
+	local bulletOrigin = BulletPos.CFrame.Position
+	ShootEvent:FireAllClients(bulletOrigin, direction)
 
 	-- UPDATE UI AFTER SHOT
 	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
