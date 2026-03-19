@@ -2,12 +2,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 
-local ShootServiceUtils = require(ServerScriptService.Utils.ShootServiceUtils)
 local ShootServer = require(ServerScriptService.Services.ShootServiceServer)
 local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
 
 local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")
-
 local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
@@ -47,19 +45,30 @@ local function InitGunAmmo(player, gunId)
 	return PlayerAmmo[player][gunId]
 end
 
-Players.PlayerAdded:Connect(function(player)
-	-- make sure ammo table exists
-	PlayerAmmo[player] = PlayerAmmo[player] or {}
-
-	-- init ammo for all guns
+-------------------------------------------------
+-- SEND INITIAL AMMO TO CLIENT
+-------------------------------------------------
+local function UpdateAllAmmo(player)
 	for _, gunData in pairs(GunConfig.Guns) do
 		local ammoData = InitGunAmmo(player, gunData.Id)
 		if ammoData then
 			UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 		end
 	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	UpdateAllAmmo(player)
 end)
 
+-- For players already in the server (script reset)
+for _, player in pairs(Players:GetPlayers()) do
+	UpdateAllAmmo(player)
+end
+
+-------------------------------------------------
+-- RELOAD FUNCTION
+-------------------------------------------------
 local function ReloadGun(player, gunId)
 	local gunData = GetGunById(gunId)
 	if not gunData then
@@ -72,27 +81,25 @@ local function ReloadGun(player, gunId)
 	end
 
 	local maxAmmo = gunData.actualGun.MaxAmmo
-
 	local needed = maxAmmo - ammoData.Current
-	if needed <= 0 then
-		return
-	end
-	if ammoData.Reserve <= 0 then
+	if needed <= 0 or ammoData.Reserve <= 0 then
 		return
 	end
 
 	local toLoad = math.min(needed, ammoData.Reserve)
-
 	ammoData.Current += toLoad
 	ammoData.Reserve -= toLoad
 
 	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 end
 
+-------------------------------------------------
+-- GET BULLET ORIGIN PART
+-------------------------------------------------
 local function GetGunBulletPos(Char)
-	for i, v in ipairs(Char:GetChildren()) do
-		if v:IsA("Tool") then
-			return v:FindFirstChild("BulletPos") or v:FindFirstChild("Handle")
+	for _, tool in ipairs(Char:GetChildren()) do
+		if tool:IsA("Tool") then
+			return tool:FindFirstChild("BulletPos") or tool:FindFirstChild("Handle")
 		end
 	end
 end
@@ -101,10 +108,7 @@ end
 -- SHOOT
 -------------------------------------------------
 ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
-	if typeof(origin) ~= "Vector3" then
-		return
-	end
-	if typeof(direction) ~= "Vector3" then
+	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
 	end
 
@@ -130,12 +134,22 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 	ammoData.Current -= 1
 
 	local damage = gunData.actualGun.Damage or 10
-	ShootServer:Shoot(player, origin, direction, 1000, damage)
-	local BulletPos: BasePart = GetGunBulletPos(player.Character)
-	local bulletOrigin = BulletPos.CFrame.Position
+
+	local Char = player.Character
+	if not Char then
+		return
+	end
+
+	local BulletPart = GetGunBulletPos(Char)
+	local bulletOrigin = BulletPart.CFrame.Position
+
+	-- Server handles actual shooting/damage
+	ShootServer:Shoot(player, bulletOrigin, direction, 1000, damage)
+
+	-- Notify all clients for visuals
 	ShootEvent:FireAllClients(bulletOrigin, direction)
 
-	-- UPDATE UI AFTER SHOT
+	-- UPDATE UI FOR PLAYER
 	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 
 	-- 🔁 AUTO RELOAD AFTER LAST BULLET
@@ -147,7 +161,7 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 end)
 
 -------------------------------------------------
--- RELOAD
+-- RELOAD EVENT
 -------------------------------------------------
 ReloadEvent.OnServerEvent:Connect(function(player, gunId)
 	task.delay(1.5, function()
