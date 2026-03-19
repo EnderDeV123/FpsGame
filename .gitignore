@@ -6,7 +6,6 @@
 /*.rbxl.lock
 
 sourcemap.json
-src/shared/Configs/GunConfig.luau
 Packages/
 ServerPackages/
 sourcemap.json
