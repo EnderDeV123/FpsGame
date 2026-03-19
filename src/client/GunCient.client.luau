@@ -55,7 +55,9 @@ local function ShootLoop()
 		end
 
 		local GunData = GetGunFromConfig(GunTool)
-		if not GunData then break end
+		if not GunData then
+			break
+		end
 
 		local gun = Gun.new(GunData.actualGun)
 		gun:Fire(GunTool)
@@ -68,17 +70,23 @@ end
 -- INPUT
 -------------------------------------------------
 UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
+	if gp then
+		return
+	end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		if Holding then return end
+		if Holding then
+			return
+		end
 		Holding = true
 		task.spawn(ShootLoop)
 	end
 
 	if input.KeyCode == Enum.KeyCode.R then
 		local GunTool = GetGunTool()
-		if not GunTool then return end
+		if not GunTool then
+			return
+		end
 
 		local gunId = GunTool:GetAttribute("Id")
 		ReloadEvent:FireServer(gunId)
