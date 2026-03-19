@@ -10,12 +10,22 @@ type MenuProps = {
 }
 
 local function Menu(props: MenuProps)
+	local counter, setCounter = React.useState(0)
 	return e("Frame", {
 		Size = UDim2.fromScale(0.5, 0.5),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = props.Position,
 		BackgroundColor3 = props.Color,
 	}, {
+		Button = e("TextButton", {
+			Text = "Pressed " .. counter .. " times",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.95),
+			Size = UDim2.fromScale(0.19, 0.19),
+			[React.Event.Activated] = function()
+				setCounter(counter + 1)
+			end,
+		}),
 		UICorner = e("UICorner", {
 			CornerRadius = UDim.new(0, 10),
 		}),
