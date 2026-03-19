@@ -18,7 +18,9 @@ end
 
 function Gun:Fire(GunModel: Tool)
 	local player = Players.LocalPlayer
-	if not player then return end
+	if not player then
+		return
+	end
 
 	local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
 
@@ -55,6 +57,7 @@ function Gun:PlayGfx(Gunmodel: Tool, direction)
 
 	local origin = BulletPos.Position
 	BulletTrailService:MoveBullet(BulletGFX, origin, direction)
+	--make sure this script is here
 end
 
 return Gun
