@@ -3,6 +3,71 @@
 registry = "test"
 
 [[package]]
+name = "core-packages/boolean"
+version = "0.0.1"
+dependencies = [["Number", "core-packages/number@0.0.1"]]
+
+[[package]]
+name = "core-packages/collections"
+version = "0.0.1"
+dependencies = [["ES7Types", "core-packages/es-7-types@0.0.1"], ["InstanceOf", "core-packages/instance-of@0.0.1"]]
+
+[[package]]
+name = "core-packages/console"
+version = "0.0.1"
+dependencies = [["Collections", "core-packages/collections@0.0.1"]]
+
+[[package]]
+name = "core-packages/es-7-types"
+version = "0.0.1"
+dependencies = []
+
+[[package]]
+name = "core-packages/instance-of"
+version = "0.0.1"
+dependencies = []
+
+[[package]]
+name = "core-packages/luau-polyfill"
+version = "0.0.1"
+dependencies = [["Boolean", "core-packages/boolean@0.0.1"], ["Collections", "core-packages/collections@0.0.1"], ["Console", "core-packages/console@0.0.1"], ["ES7Types", "core-packages/es-7-types@0.0.1"], ["InstanceOf", "core-packages/instance-of@0.0.1"], ["Math", "core-packages/math@0.0.1"], ["Number", "core-packages/number@0.0.1"], ["String", "core-packages/string@0.0.1"], ["Symbol", "core-packages/symbol@0.0.1"], ["Timers", "core-packages/timers@0.0.1"]]
+
+[[package]]
+name = "core-packages/math"
+version = "0.0.1"
+dependencies = []
+
+[[package]]
+name = "core-packages/number"
+version = "0.0.1"
+dependencies = []
+
+[[package]]
+name = "core-packages/react"
+version = "0.0.1"
+dependencies = [["LuauPolyfill", "core-packages/luau-polyfill@0.0.1"], ["Shared", "core-packages/shared@0.0.1"]]
+
+[[package]]
+name = "core-packages/shared"
+version = "0.0.1"
+dependencies = [["LuauPolyfill", "core-packages/luau-polyfill@0.0.1"]]
+
+[[package]]
+name = "core-packages/string"
+version = "0.0.1"
+dependencies = [["ES7Types", "core-packages/es-7-types@0.0.1"], ["Number", "core-packages/number@0.0.1"]]
+
+[[package]]
+name = "core-packages/symbol"
+version = "0.0.1"
+dependencies = []
+
+[[package]]
+name = "core-packages/timers"
+version = "0.0.1"
+dependencies = [["Collections", "core-packages/collections@0.0.1"]]
+
+[[package]]
 name = "firebird702/profileservice"
 version = "1.1.0"
 dependencies = []
@@ -10,7 +75,7 @@ dependencies = []
 [[package]]
 name = "hp/anime-fps-game"
 version = "0.1.0"
-dependencies = [["Profilestore", "sekuriyo-lotus/profilestore@1.0.4"], ["ProfileService", "firebird702/profileservice@1.1.0"]]
+dependencies = [["Profilestore", "sekuriyo-lotus/profilestore@1.0.4"], ["React", "core-packages/react@0.0.1"], ["ProfileService", "firebird702/profileservice@1.1.0"]]
 
 [[package]]
 name = "sekuriyo-lotus/profilestore"

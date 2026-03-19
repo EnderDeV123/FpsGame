@@ -68,11 +68,9 @@ local function ApplyRecoil(amount)
 	recoilOffset += Vector2.new(randomX * amount * 0.5, amount)
 end
 
--------------------------------------------------
--- HOLD SHOOT
--------------------------------------------------
 local Holding = false
 
+-- Shoots bullet on the client
 local function ShootLoop()
 	while Holding do
 		local GunTool = GetGunTool()
