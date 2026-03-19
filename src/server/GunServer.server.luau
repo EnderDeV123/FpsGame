@@ -34,57 +34,68 @@ local function InitGunAmmo(player, gunId)
 
 	if not PlayerAmmo[player][gunId] then
 		local gunData = GetGunById(gunId)
-		if not gunData then return end
+		if not gunData then
+			return
+		end
 
 		PlayerAmmo[player][gunId] = {
 			Current = gunData.actualGun.MaxAmmo,
-			Reserve = gunData.actualGun.Totalammo
+			Reserve = gunData.actualGun.Totalammo,
 		}
 	end
 
 	return PlayerAmmo[player][gunId]
 end
 
-
 local function ReloadGun(player, gunId)
 	local gunData = GetGunById(gunId)
-	if not gunData then return end
+	if not gunData then
+		return
+	end
 
 	local ammoData = InitGunAmmo(player, gunId)
-	if not ammoData then return end
+	if not ammoData then
+		return
+	end
 
 	local maxAmmo = gunData.actualGun.MaxAmmo
 
 	local needed = maxAmmo - ammoData.Current
-	if needed <= 0 then return end
-	if ammoData.Reserve <= 0 then return end
+	if needed <= 0 then
+		return
+	end
+	if ammoData.Reserve <= 0 then
+		return
+	end
 
 	local toLoad = math.min(needed, ammoData.Reserve)
 
 	ammoData.Current += toLoad
 	ammoData.Reserve -= toLoad
 
-	UpdateAmmoEvent:FireClient(
-		player,
-		ammoData.Current,
-		ammoData.Reserve,
-		gunData.actualGun.Name
-	)
+	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 end
 
 -------------------------------------------------
 -- SHOOT
 -------------------------------------------------
 ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
-
-	if typeof(origin) ~= "Vector3" then return end
-	if typeof(direction) ~= "Vector3" then return end
+	if typeof(origin) ~= "Vector3" then
+		return
+	end
+	if typeof(direction) ~= "Vector3" then
+		return
+	end
 
 	local gunData = GetGunById(gunId)
-	if not gunData then return end
+	if not gunData then
+		return
+	end
 
 	local ammoData = InitGunAmmo(player, gunId)
-	if not ammoData then return end
+	if not ammoData then
+		return
+	end
 
 	-- ❌ EMPTY MAG → AUTO RELOAD
 	if ammoData.Current <= 0 then
@@ -101,18 +112,13 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 	ShootServer:Shoot(player, origin, direction, 1000, damage)
 
 	-- UPDATE UI AFTER SHOT
-	UpdateAmmoEvent:FireClient(
-		player,
-		ammoData.Current,
-		ammoData.Reserve,
-		gunData.actualGun.Name
-	)
+	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 
 	-- 🔁 AUTO RELOAD AFTER LAST BULLET
 	if ammoData.Current <= 0 and ammoData.Reserve > 0 then
 		task.delay(1.5, function()
-	        ReloadGun(player, gunId)
-        end)
+			ReloadGun(player, gunId)
+		end)
 	end
 end)
 
@@ -121,8 +127,8 @@ end)
 -------------------------------------------------
 ReloadEvent.OnServerEvent:Connect(function(player, gunId)
 	task.delay(1.5, function()
-	    ReloadGun(player, gunId)
-    end)
+		ReloadGun(player, gunId)
+	end)
 end)
 
 -------------------------------------------------
