@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local AmmoHUD = require(script.Parent.AmmoHUD)
 local Menu = require(script.Parent.Menu)
 local React = require(ReplicatedStorage.Packages.React)
 local e = React.createElement
@@ -16,6 +17,8 @@ local function RootUI()
 			Color = Color3.fromRGB(132, 55, 133),
 			Position = UDim2.fromScale(0.5, 0.75),
 		}),
+
+		AmmoHud = e(AmmoHUD),
 	})
 end
 

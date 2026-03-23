@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local React = require(ReplicatedStorage.Packages.React)
 
 local e = React.createElement
@@ -45,4 +46,27 @@ local function Menu(props: MenuProps)
 	})
 end
 
-return Menu
+return function(props: MenuProps)
+	local shown, setShown = React.useState(false)
+	React.useEffect(function()
+		local conn = UserInputService.InputBegan:Connect(function(input, proccess)
+			if proccess then
+				return
+			end
+
+			if input.KeyCode == Enum.KeyCode.E then
+				setShown(not shown)
+			end
+		end)
+
+		return function()
+			conn:Disconnect()
+		end
+	end, { shown })
+
+	if shown then
+		return e(Menu, props)
+	else
+		return nil
+	end
+end

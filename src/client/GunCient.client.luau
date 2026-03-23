@@ -141,10 +141,10 @@ end)
 -------------------------------------------------
 -- AMMO UI
 -------------------------------------------------
-UpdateAmmoEvent.OnClientEvent:Connect(function(current, reserve, gunname)
-	CurrentAmmo = current
-	ReserveAmmo = reserve
-	CurrentGunName = gunname
+-- UpdateAmmoEvent.OnClientEvent:Connect(function(current, reserve, gunname)
+-- 	CurrentAmmo = current
+-- 	ReserveAmmo = reserve
+-- 	CurrentGunName = gunname
 
-	print(gunname .. " | Ammo: " .. current .. "/" .. reserve)
-end)
+-- 	print(gunname .. " | Ammo: " .. current .. "/" .. reserve)
+-- end)
