@@ -137,14 +137,3 @@ UserInputService.InputEnded:Connect(function(input)
 		Holding = false
 	end
 end)
-
--------------------------------------------------
--- AMMO UI
--------------------------------------------------
--- UpdateAmmoEvent.OnClientEvent:Connect(function(current, reserve, gunname)
--- 	CurrentAmmo = current
--- 	ReserveAmmo = reserve
--- 	CurrentGunName = gunname
-
--- 	print(gunname .. " | Ammo: " .. current .. "/" .. reserve)
--- end)
