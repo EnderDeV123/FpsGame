@@ -4,19 +4,17 @@ local React = require(ReplicatedStorage.Packages.React)
 local ReactRoblox = require(ReplicatedStorage.Packages.ReactRoblox)
 local RootUi = require(ReplicatedStorage.Shared.app.RootUi)
 
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
 return function()
-	local player = Players.LocalPlayer
-	local PlayerGui = player.PlayerGui
-	local Container = Instance.new("ScreenGui")
-	Container.Name = "React"
-	Container.IgnoreGuiInset = true
-	Container.ResetOnSpawn = false
-	Container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	Container.ClipToDeviceSafeArea = true
-	Container.Parent = PlayerGui
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "ReactUI"
+	screenGui.IgnoreGuiInset = true
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.Parent = PlayerGui
 
-	local root = ReactRoblox.createRoot(Container)
-	local app = React.createElement(RootUi)
-
-	root:render(app)
+	local root = ReactRoblox.createRoot(screenGui)
+	root:render(React.createElement(RootUi))
 end

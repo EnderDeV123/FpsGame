@@ -54,7 +54,7 @@ return function(props: MenuProps)
 				return
 			end
 
-			if input.KeyCode == Enum.KeyCode.E then
+			if input.KeyCode == Enum.KeyCode.F then
 				setShown(not shown)
 			end
 		end)
