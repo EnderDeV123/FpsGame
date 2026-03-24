@@ -6,7 +6,7 @@ module.Guns = {
 		Id = 1,
 	},
 	HandGun = {
-		actualGun = { Name = "HandGun", Damage = 20, DebounceTime = 0.3, recoil = 0.3, MaxAmmo = 20, Totalammo = 40 },
+		actualGun = { Name = "Sniper", Damage = 100, DebounceTime = 0.3, recoil = 1, MaxAmmo = 20, Totalammo = 40 },
 		Id = 2,
 	},
 }

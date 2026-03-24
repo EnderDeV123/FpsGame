@@ -10,6 +10,8 @@ local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rem
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 
+local UpdateAmmoRequestEvent: RemoteEvent = RemotesFolder:WaitForChild("UpdateAmmoRequestEvent")
+
 local Player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
@@ -27,7 +29,7 @@ local CurrentGunObject = nil
 -------------------------------------------------
 -- CHARACTER
 -------------------------------------------------
-local Char
+local Char = Player.Character or Player.CharacterAdded:Wait()
 
 local function UpdateChar()
 	Char = Player.Character or Player.CharacterAdded:Wait()
@@ -170,5 +172,11 @@ end)
 UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		Holding = false
+	end
+end)
+
+Char.ChildAdded:Connect(function(child)
+	if child:IsA("Tool") and child:GetAttribute("isGun") then
+		UpdateAmmoRequestEvent:FireServer(child)
 	end
 end)

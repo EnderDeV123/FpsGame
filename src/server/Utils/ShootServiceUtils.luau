@@ -5,25 +5,28 @@ local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rem
 local ShootServiceUtils = {}
 
 function ShootServiceUtils:CreateUtils()
-    
-    local existing = RemotesFolder:FindFirstChild("ShootEvent")
-    if existing then
-        return existing
-    end
+	local existing = RemotesFolder:FindFirstChild("ShootEvent")
+	if existing then
+		return existing
+	end
 
-    local remote = Instance.new("RemoteEvent")
-    remote.Name = "ShootEvent"
-    remote.Parent = RemotesFolder
+	local remote = Instance.new("RemoteEvent")
+	remote.Name = "ShootEvent"
+	remote.Parent = RemotesFolder
 
-    local ReloadRemote = Instance.new("RemoteEvent")
-    ReloadRemote.Name = "ReloadEvent"
-    ReloadRemote.Parent = RemotesFolder
+	local ReloadRemote = Instance.new("RemoteEvent")
+	ReloadRemote.Name = "ReloadEvent"
+	ReloadRemote.Parent = RemotesFolder
 
-    local UpdateAmmoRemote = Instance.new("RemoteEvent")
-    UpdateAmmoRemote.Name = "UpdateAmmoEvent"
-    UpdateAmmoRemote.Parent = RemotesFolder
+	local UpdateAmmoRemote = Instance.new("RemoteEvent")
+	UpdateAmmoRemote.Name = "UpdateAmmoEvent"
+	UpdateAmmoRemote.Parent = RemotesFolder
 
-    return remote
+	local UpdateAmmoRequestEvent = Instance.new("RemoteEvent")
+	UpdateAmmoRequestEvent.Name = "UpdateAmmoRequestEvent"
+	UpdateAmmoRequestEvent.Parent = RemotesFolder
+
+	return remote
 end
 
 return ShootServiceUtils
