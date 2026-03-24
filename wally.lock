@@ -10,7 +10,7 @@ dependencies = []
 [[package]]
 name = "hp/anime-fps-game"
 version = "0.1.0"
-dependencies = [["Profilestore", "sekuriyo-lotus/profilestore@1.0.4"], ["React", "jsdotlua/react@17.2.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["ProfileService", "firebird702/profileservice@1.1.0"]]
+dependencies = [["React", "jsdotlua/react@17.2.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["ProfileService", "firebird702/profileservice@1.1.0"], ["Profilestore", "sekuriyo-lotus/profilestore@1.0.4"]]
 
 [[package]]
 name = "jsdotlua/boolean"

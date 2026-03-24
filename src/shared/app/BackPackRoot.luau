@@ -6,9 +6,5 @@ local BackPack = require(ReplicatedStorage.Shared.app.BackPack.BackPack)
 local e = React.createElement
 
 return function()
-	return e(BackPack, {
-		Player = Players.LocalPlayer,
-		SlotAmount = 4,
-		BackPack = Players.LocalPlayer.Backpack,
-	})
+	return e(BackPack)
 end

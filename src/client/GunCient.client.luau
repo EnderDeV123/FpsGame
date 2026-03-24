@@ -76,7 +76,7 @@ local recoilRecoverySpeed = 10
 RunService.RenderStepped:Connect(function(dt)
 	recoilOffset = recoilOffset:Lerp(Vector2.new(0, 0), dt * recoilRecoverySpeed)
 
-	local recoilCFrame = CFrame.Angles(math.rad(-recoilOffset.Y), math.rad(-recoilOffset.X), 0)
+	local recoilCFrame = CFrame.Angles(math.rad(recoilOffset.Y), math.rad(recoilOffset.X), 0)
 
 	Camera.CFrame = Camera.CFrame * recoilCFrame
 end)

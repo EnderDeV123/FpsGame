@@ -1,73 +1,62 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+
 local BackPackSlot = require(script.Parent.BackPackSlot)
 local React = require(ReplicatedStorage.Packages.React)
 
 local e = React.createElement
+local useState = React.useState
 
-type BackPackProps = {
-	Player: Player, -- The player whose backpack we are showing
-	SlotAmount: number, -- Total number of slots in the backpack
-	BackPacl: Backpack,
-}
-
-local function BackPack(props: BackPackProps)
-	local player = props.Player
-	local backpack = player:WaitForChild("Backpack")
-
-	-- React state to force re-render when backpack changes
-	local useState = React.useState
-	local _, setUpdate = useState(0)
-
-	-- Function to refresh GUI
-	local function refresh()
-		setUpdate(os.clock()) -- triggers re-render
-	end
-
-	-- Listen to backpack changes (add/remove tools)
-	React.useEffect(function()
-		-- Child added/removed in backpack
-		local addedConn = backpack.ChildAdded:Connect(refresh)
-		local removedConn = backpack.ChildRemoved:Connect(refresh)
-
-		-- Also listen to StarterGear changes (when player respawns)
-		local starterConn
-		if player:FindFirstChild("StarterGear") then
-			starterConn = player.StarterGear.ChildAdded:Connect(function(tool)
-				-- Wait a tiny delay for tool to clone to backpack
-				task.delay(0.1, refresh)
-			end)
-		end
-
-		-- Cleanup on unmount
-		return function()
-			addedConn:Disconnect()
-			removedConn:Disconnect()
-			if starterConn then
-				starterConn:Disconnect()
-			end
-		end
-	end, {}) -- run only on mount
-
-	-- Build slots based on current tools
-	local slots = {}
-
-	-- Fill remaining slots
-	local remainingSlots = props.SlotAmount - #slots
-	for i = 1, remainingSlots do
-		table.insert(slots, e(BackPackSlot, {}))
-	end
-
-	-- Add UIGridLayout for neat arrangement
-	local gridLayout = e("UIGridLayout", {
-		CellSize = UDim2.new(0, 50, 0, 50),
-		CellPadding = UDim2.new(0, 5, 0, 5),
-	})
+local function BackPack()
+	local selectedSlot, setSelectedSlot = useState(1) -- default selected
 
 	return e("Frame", {
-		Size = UDim2.new(0, 300, 0, 300),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.877, 0.583),
+		Size = UDim2.fromScale(0.3, 0.4),
 		BackgroundTransparency = 1,
-	}, { gridLayout, table.unpack(slots) })
+	}, {
+		UIListLayout = e("UIListLayout", {
+			FillDirection = Enum.FillDirection.Vertical,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 5),
+		}),
+
+		Slot1 = e(BackPackSlot, {
+			Name = "Sniper",
+			LayoutOrder = 1,
+			Selected = selectedSlot == 1,
+			OnClick = function()
+				setSelectedSlot(1)
+			end,
+		}),
+
+		Slot2 = e(BackPackSlot, {
+			Name = "Pistol",
+			LayoutOrder = 2,
+			Selected = selectedSlot == 2,
+			OnClick = function()
+				setSelectedSlot(2)
+			end,
+		}),
+
+		Slot3 = e(BackPackSlot, {
+			Name = "Medkit",
+			LayoutOrder = 3,
+			Selected = selectedSlot == 3,
+			OnClick = function()
+				setSelectedSlot(3)
+			end,
+		}),
+
+		Slot4 = e(BackPackSlot, {
+			Name = "Empty",
+			LayoutOrder = 4,
+			Selected = selectedSlot == 4,
+			OnClick = function()
+				setSelectedSlot(4)
+			end,
+		}),
+	})
 end
 
 return BackPack

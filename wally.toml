@@ -5,12 +5,10 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
 [dependencies]
-
-Profilestore = "sekuriyo-lotus/profilestore@1.0.4"
 React = "jsdotlua/react@17.2.1"
 ReactRoblox = "jsdotlua/react-roblox@17.2.1"
 
 
 [server-dependencies]
-
+Profilestore = "sekuriyo-lotus/profilestore@1.0.4"
 ProfileService = "firebird702/profileservice@1.1.0"
