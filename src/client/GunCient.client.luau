@@ -11,7 +11,7 @@ local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 local UpdateAmmoRequestEvent = RemotesFolder:WaitForChild("UpdateAmmoRequestEvent")
 local GetDebounceBindable: BindableEvent = RemotesFolder:WaitForChild("GetDebounceBindable")
-
+local GetShootBindable: BindableEvent = RemotesFolder:WaitForChild("GetShootBindable")
 local Player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
@@ -146,6 +146,8 @@ local function ShootLoop()
 		-- SAFE FIRE
 		if CurrentGunObject and CurrentGunObject.Fire then
 			CurrentGunObject:Fire(tool)
+			local AnimationId = gunData.actualGun.Animations.ShootAnimation
+			GetShootBindable:Fire(AnimationId)
 		end
 
 		-- SEND TO SERVER

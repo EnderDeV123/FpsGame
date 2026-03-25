@@ -9,7 +9,7 @@ local player = Players.LocalPlayer
 local ViewModelsFolder = ReplicatedStorage:WaitForChild("GFX"):WaitForChild("ViewModels")
 local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")
 local GetDebounceBindable: BindableEvent = RemotesFolder:WaitForChild("GetDebounceBindable")
-
+local GetShootBindable: BindableEvent = RemotesFolder:WaitForChild("GetShootBindable")
 local currentViewModel = nil
 local primaryPart = nil
 
@@ -83,7 +83,14 @@ RunService.RenderStepped:Connect(function()
 end)
 
 GetDebounceBindable.Event:Connect(function(DebounceAnimationId)
+	task.wait(0.3)
 	local Humanoide = currentViewModel:WaitForChild("Humanoid")
 	local Animator = Humanoide:WaitForChild("Animator")
 	AnimationService:PlayAnimations(DebounceAnimationId, Animator)
+end)
+
+GetShootBindable.Event:Connect(function(ShootAnimationId)
+	local Humanoide = currentViewModel:WaitForChild("Humanoid")
+	local Animator = Humanoide:WaitForChild("Animator")
+	AnimationService:PlayAnimations(ShootAnimationId, Animator)
 end)

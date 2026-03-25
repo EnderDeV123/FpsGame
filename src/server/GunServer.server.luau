@@ -3,7 +3,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local ShootServer = require(ServerScriptService.Services.ShootServiceServer)
+local SoundService = require(ServerScriptService.Services.SoundService)
 local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
+local PlayerAmmoData = require(ReplicatedStorage.Shared.PlayerData.PlayerAmmoData)
 
 local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")
 local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
@@ -26,7 +28,7 @@ end
 -------------------------------------------------
 -- PLAYER AMMO
 -------------------------------------------------
-local PlayerAmmo = {}
+local PlayerAmmo = PlayerAmmoData.ammos
 
 local function InitGunAmmo(player, gunId)
 	PlayerAmmo[player] = PlayerAmmo[player] or {}
@@ -128,6 +130,11 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 
 	-- visuals
 	ShootEvent:FireAllClients(origin, direction)
+
+	local SoundID = gunData.actualGun.SFX.Shoot
+	local PlayerChar = player.Character or player.CharacterAdded:Wait()
+
+	SoundService:PlaySound(SoundID, PlayerChar)
 
 	-- update UI
 	SendAmmo(player, gunId)

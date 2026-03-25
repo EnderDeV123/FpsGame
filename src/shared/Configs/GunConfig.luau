@@ -12,6 +12,10 @@ module.Guns = {
 			Totalammo = 50,
 			Animations = {
 				DebounceAnimation = 0,
+				ShootAnimation = 0,
+			},
+			SFX = {
+				Shoot = 156820338,
 			},
 		},
 	},
@@ -26,7 +30,11 @@ module.Guns = {
 			MaxAmmo = 5,
 			Totalammo = 20,
 			Animations = {
-				DebounceAnimation = 104179898786451,
+				DebounceAnimation = 122970814071616,
+				ShootAnimation = 138572993898717,
+			},
+			SFX = {
+				Shoot = 116571995883810,
 			},
 		},
 	},
