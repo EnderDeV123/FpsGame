@@ -32,7 +32,7 @@ Anime-FPS-Game/
 ├── default.project.json
 ├── wally.toml
 └── README.md
-
+```
 
 ---
 
@@ -46,7 +46,7 @@ Make sure you have the following installed:
 - **Rokit** → https://github.com/rojo-rbx/rokit
 - **VS Code** (recommended)
 - **Rojo Studio Plugin**
-```
+
 
 ---
 
