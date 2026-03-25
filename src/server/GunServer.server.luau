@@ -24,39 +24,42 @@ local function GetGunById(id)
 end
 
 -------------------------------------------------
--- PLAYER AMMO STORAGE
+-- PLAYER AMMO
 -------------------------------------------------
 local PlayerAmmo = {}
 
 local function InitGunAmmo(player, gunId)
 	PlayerAmmo[player] = PlayerAmmo[player] or {}
+
 	if not PlayerAmmo[player][gunId] then
 		local gunData = GetGunById(gunId)
 		if not gunData then
 			return
 		end
+
 		PlayerAmmo[player][gunId] = {
 			Current = gunData.actualGun.MaxAmmo,
 			Reserve = gunData.actualGun.Totalammo,
 		}
 	end
+
 	return PlayerAmmo[player][gunId]
 end
 
 -------------------------------------------------
--- SEND INITIAL AMMO
+-- SEND AMMO
 -------------------------------------------------
-local function UpdateAllAmmo(player)
-	for _, gunData in pairs(GunConfig.Guns) do
-		local ammoData = InitGunAmmo(player, gunData.Id)
-		if ammoData then
-			UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
-		end
+local function SendAmmo(player, gunId)
+	local gunData = GetGunById(gunId)
+	local ammoData = InitGunAmmo(player, gunId)
+
+	if gunData and ammoData then
+		UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
 	end
 end
 
 -------------------------------------------------
--- RELOAD FUNCTION
+-- RELOAD
 -------------------------------------------------
 local function ReloadGun(player, gunId)
 	local gunData = GetGunById(gunId)
@@ -71,26 +74,17 @@ local function ReloadGun(player, gunId)
 
 	local maxAmmo = gunData.actualGun.MaxAmmo
 	local needed = maxAmmo - ammoData.Current
+
 	if needed <= 0 or ammoData.Reserve <= 0 then
 		return
 	end
 
 	local toLoad = math.min(needed, ammoData.Reserve)
+
 	ammoData.Current += toLoad
 	ammoData.Reserve -= toLoad
 
-	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
-end
-
--------------------------------------------------
--- GET BULLET ORIGIN
--------------------------------------------------
-local function GetGunBulletPos(Char)
-	for _, tool in ipairs(Char:GetChildren()) do
-		if tool:IsA("Tool") then
-			return tool:FindFirstChild("BulletPos") or tool:FindFirstChild("Handle")
-		end
-	end
+	SendAmmo(player, gunId)
 end
 
 -------------------------------------------------
@@ -111,34 +105,34 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 		return
 	end
 
-	-- AUTO RELOAD IF EMPTY
-	if ammoData.Current <= 0 and ammoData.Reserve > 0 then
-		ReloadGun(player, gunId)
+	-- 🔥 HARD BLOCK
+	if ammoData.Current <= 0 then
+		if ammoData.Reserve > 0 then
+			ReloadGun(player, gunId)
+		end
 		return
 	end
 
-	-- FIRE BULLET
+	-- 🔥 CONSUME AMMO
 	ammoData.Current -= 1
 
-	local damage = gunData.actualGun.Damage or 10
-	local Char = player.Character
-	if not Char then
+	local char = player.Character
+	if not char then
 		return
 	end
 
-	local BulletPart = GetGunBulletPos(Char)
-	local bulletOrigin = BulletPart and BulletPart.CFrame.Position or origin
+	local damage = gunData.actualGun.Damage or 10
 
-	-- Server handles shooting/damage
-	ShootServer:Shoot(player, bulletOrigin, direction, 1000, damage)
+	-- shoot logic
+	ShootServer:Shoot(player, origin, direction, 1000, damage)
 
-	-- Notify clients for visuals
-	ShootEvent:FireAllClients(bulletOrigin, direction)
+	-- visuals
+	ShootEvent:FireAllClients(origin, direction)
 
-	-- Update player's UI
-	UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunData.actualGun.Name)
+	-- update UI
+	SendAmmo(player, gunId)
 
-	-- AUTO RELOAD AFTER LAST BULLET
+	-- auto reload
 	if ammoData.Current <= 0 and ammoData.Reserve > 0 then
 		task.delay(1.5, function()
 			ReloadGun(player, gunId)
@@ -156,71 +150,23 @@ ReloadEvent.OnServerEvent:Connect(function(player, gunId)
 end)
 
 -------------------------------------------------
--- EQUIP LISTENER: Update ammo when player equips tool
+-- REQUEST AMMO
 -------------------------------------------------
-local function SetupEquipListener(player)
-	local function onChar(char)
-		local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
-		if not humanoid then
-			return
-		end
-
-		humanoid.ChildAdded:Connect(function(child)
-			if child:IsA("Tool") then
-				local gunName = child.Name
-				for _, gunData in pairs(GunConfig.Guns) do
-					if gunData.actualGun.Name == gunName then
-						local ammoData = InitGunAmmo(player, gunData.Id)
-						if ammoData then
-							UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunName)
-						end
-						break
-					end
-				end
-			end
-		end)
-	end
-
-	if player.Character then
-		onChar(player.Character)
-	end
-	player.CharacterAdded:Connect(onChar)
-end
-
--------------------------------------------------
--- HANDLE CLIENT REQUEST FOR AMMO
--------------------------------------------------
-UpdateAmmoRequestEvent.OnServerEvent:Connect(function(player, gunTool)
-	if not gunTool or not gunTool:IsA("Tool") then
+UpdateAmmoRequestEvent.OnServerEvent:Connect(function(player, tool)
+	if not tool or not tool:IsA("Tool") then
 		return
 	end
 
-	local gunId = gunTool:GetAttribute("Id")
+	local gunId = tool:GetAttribute("Id")
 	if not gunId then
 		return
 	end
 
-	local ammoData = InitGunAmmo(player, gunId)
-	if ammoData then
-		UpdateAmmoEvent:FireClient(player, ammoData.Current, ammoData.Reserve, gunTool.Name)
-	end
+	SendAmmo(player, gunId)
 end)
 
 -------------------------------------------------
--- PLAYER JOIN
--------------------------------------------------
-Players.PlayerAdded:Connect(function(player)
-	UpdateAllAmmo(player)
-	SetupEquipListener(player)
-end)
-
-for _, player in pairs(Players:GetPlayers()) do
-	UpdateAllAmmo(player)
-	SetupEquipListener(player)
-end
-
--------------------------------------------------
--- CLEANUP
+-- PLAYER CLEANUP
 -------------------------------------------------
 Players.PlayerRemoving:Connect(function(player)
 	PlayerAmmo[player] = nil

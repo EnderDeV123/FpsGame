@@ -26,6 +26,10 @@ function ShootServiceUtils:CreateUtils()
 	UpdateAmmoRequestEvent.Name = "UpdateAmmoRequestEvent"
 	UpdateAmmoRequestEvent.Parent = RemotesFolder
 
+	local Remote = Instance.new("RemoteEvent")
+	Remote.Parent = RemotesFolder
+	Remote.Name = "SendDataToClient"
+
 	return remote
 end
 

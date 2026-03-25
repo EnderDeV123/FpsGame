@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlayerData = require(ServerScriptService.Module.PlayerData)
+local SendDataToClient =
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"):WaitForChild("SendDataToClient")
 
 local function WaitForData(player: Player)
 	local playerData = PlayerData.GetData(player)
@@ -16,11 +18,7 @@ local function WaitForData(player: Player)
 end
 
 local function SendDataToPlayer(player, data)
-	local Remote = Instance.new("RemoteEvent")
-	Remote.Parent = ReplicatedStorage.Shared.Remotes
-	Remote.Name = "SendDataToClient"
-
-	Remote:FireClient(player, data)
+	SendDataToClient:FireClient(player, data)
 end
 
 Players.PlayerAdded:Connect(function(player)
