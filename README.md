@@ -19,6 +19,7 @@ This project is designed for developers who want a clean, maintainable codebase 
 
 ---
 
+```bash
 ## 📁 Project Structure
 Anime-FPS-Game/
 │
@@ -45,6 +46,7 @@ Make sure you have the following installed:
 - **Rokit** → https://github.com/rojo-rbx/rokit
 - **VS Code** (recommended)
 - **Rojo Studio Plugin**
+```
 
 ---
 
