@@ -12,6 +12,10 @@ function AnimationServiceUtils:CreateUtils()
 	local GetShootBindable = Instance.new("BindableEvent")
 	GetShootBindable.Name = "GetShootBindable"
 	GetShootBindable.Parent = RemotesFolder
+
+	local GetReloadBindable = Instance.new("BindableEvent")
+	GetReloadBindable.Name = "GetReloadBindable"
+	GetReloadBindable.Parent = RemotesFolder
 end
 
 return AnimationServiceUtils

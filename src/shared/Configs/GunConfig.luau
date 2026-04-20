@@ -13,9 +13,11 @@ module.Guns = {
 			Animations = {
 				DebounceAnimation = 0,
 				ShootAnimation = 0,
+				ReloadAnimation = 0,
 			},
 			SFX = {
 				Shoot = 156820338,
+				RealodSound = 109727847137916,
 			},
 		},
 	},
@@ -32,9 +34,11 @@ module.Guns = {
 			Animations = {
 				DebounceAnimation = 122970814071616,
 				ShootAnimation = 138572993898717,
+				ReloadAnimation = 129516043109882,
 			},
 			SFX = {
 				Shoot = 116571995883810,
+				RealodSound = 109727847137916,
 			},
 		},
 	},

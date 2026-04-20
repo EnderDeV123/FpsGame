@@ -10,8 +10,10 @@ local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 local UpdateAmmoRequestEvent = RemotesFolder:WaitForChild("UpdateAmmoRequestEvent")
-local GetDebounceBindable: BindableEvent = RemotesFolder:WaitForChild("GetDebounceBindable")
-local GetShootBindable: BindableEvent = RemotesFolder:WaitForChild("GetShootBindable")
+local GetDebounceBindable = RemotesFolder:WaitForChild("GetDebounceBindable")
+local GetShootBindable = RemotesFolder:WaitForChild("GetShootBindable")
+local GetReloadBindable = RemotesFolder:WaitForChild("GetReloadBindable")
+
 local Player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
@@ -20,12 +22,17 @@ local Camera = workspace.CurrentCamera
 -------------------------------------------------
 local CurrentAmmo = 0
 local ReserveAmmo = 0
+
 local CurrentGunObject = nil
 local CurrentGunId = nil
+local gunData = nil
 
 local Holding = false
 local Reloading = false
 local CanShoot = true
+
+-- 🔥 NEW (IMPORTANT)
+local TriedToShootEmpty = false
 
 -------------------------------------------------
 -- CHARACTER
@@ -37,20 +44,6 @@ Player.CharacterAdded:Connect(function(c)
 	CurrentGunObject = nil
 	CurrentGunId = nil
 end)
-
--------------------------------------------------
--- RECOIL (FIXED)
--------------------------------------------------
-local function ApplyRecoil(amount)
-	if not Camera then
-		return
-	end
-
-	local recoilX = math.rad(-amount * 5)
-	local recoilY = math.rad(math.random(-amount * 2, amount * 2))
-
-	Camera.CFrame = Camera.CFrame * CFrame.Angles(recoilX, recoilY, 0)
-end
 
 -------------------------------------------------
 -- AMMO SYNC
@@ -97,7 +90,53 @@ local function GetGunFromConfig(tool)
 end
 
 -------------------------------------------------
--- SHOOT LOOP (FULLY SAFE)
+-- RECOIL
+-------------------------------------------------
+local function ApplyRecoil(amount)
+	local recoilX = math.rad(-amount * 5)
+	local recoilY = math.rad(math.random(-amount * 2, amount * 2))
+	Camera.CFrame = Camera.CFrame * CFrame.Angles(recoilX, recoilY, 0)
+end
+
+-------------------------------------------------
+-- RELOAD FUNCTION (CLIENT CONTROLLED)
+-------------------------------------------------
+local function StartReload(gunId)
+	if Reloading then
+		return
+	end
+	if not gunData then
+		return
+	end
+	if CurrentAmmo >= gunData.actualGun.MaxAmmo then
+		return
+	end
+	if ReserveAmmo <= 0 then
+		return
+	end
+
+	Reloading = true
+	CanShoot = false
+	TriedToShootEmpty = false
+
+	local reloadTime = gunData.actualGun.ReloadTime or 1.5
+
+	GetReloadBindable:Fire(gunData.actualGun.Animations.ReloadAnimation)
+
+	task.delay(reloadTime, function()
+		if not Player.Character then
+			return
+		end
+
+		ReloadEvent:FireServer(gunId)
+
+		Reloading = false
+		CanShoot = true
+	end)
+end
+
+-------------------------------------------------
+-- SHOOT LOOP
 -------------------------------------------------
 local function ShootLoop()
 	while Holding do
@@ -106,7 +145,7 @@ local function ShootLoop()
 			break
 		end
 
-		local gunData = GetGunFromConfig(tool)
+		gunData = GetGunFromConfig(tool)
 		if not gunData or not gunData.actualGun then
 			break
 		end
@@ -116,51 +155,49 @@ local function ShootLoop()
 			break
 		end
 
-		-- create gun only if changed
 		if not CurrentGunObject or CurrentGunId ~= gunId then
 			CurrentGunObject = Gun.new(gunData.actualGun)
 			CurrentGunId = gunId
 		end
 
-		-- no ammo → auto reload
+		-- 🔥 EMPTY MAG LOGIC (FIXED)
 		if CurrentAmmo <= 0 then
-			if ReserveAmmo > 0 and not Reloading then
-				Reloading = true
-				ReloadEvent:FireServer(gunId)
-
-				task.delay(1.5, function()
-					Reloading = false
-				end)
+			if not TriedToShootEmpty then
+				-- first click → just mark
+				TriedToShootEmpty = true
+			else
+				-- second click → reload
+				if ReserveAmmo > 0 then
+					StartReload(gunId)
+				end
 			end
+
 			break
 		end
 
-		-- debounce
 		if not CanShoot then
 			task.wait()
 			continue
 		end
 
 		CanShoot = false
+		TriedToShootEmpty = false
 
-		-- SAFE FIRE
+		-- FIRE
 		if CurrentGunObject and CurrentGunObject.Fire then
 			CurrentGunObject:Fire(tool)
-			local AnimationId = gunData.actualGun.Animations.ShootAnimation
-			GetShootBindable:Fire(AnimationId)
+			GetShootBindable:Fire(gunData.actualGun.Animations.ShootAnimation)
 		end
 
-		-- SEND TO SERVER
 		local origin = Camera.CFrame.Position
 		local direction = Camera.CFrame.LookVector
 
 		ShootEvent:FireServer(origin, direction, gunId)
 
-		-- recoil
 		ApplyRecoil(gunData.actualGun.recoil or 0.2)
-		local DebounceAnimationId = gunData.actualGun.Animations.DebounceAnimation
-		GetDebounceBindable:Fire(DebounceAnimationId)
-		-- debounce reset
+
+		GetDebounceBindable:Fire(gunData.actualGun.Animations.DebounceAnimation)
+
 		task.delay(gunData.actualGun.DebounceTime or 0.2, function()
 			CanShoot = true
 		end)
@@ -187,12 +224,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
 		task.spawn(ShootLoop)
 	end
 
-	-- RELOAD
+	-- RELOAD (MANUAL)
 	if input.KeyCode == Enum.KeyCode.R then
-		if Reloading then
-			return
-		end
-
 		local tool = GetGunTool()
 		if not tool then
 			return
@@ -203,12 +236,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 			return
 		end
 
-		Reloading = true
-		ReloadEvent:FireServer(gunId)
-
-		task.delay(1.5, function()
-			Reloading = false
-		end)
+		StartReload(gunId)
 	end
 end)
 
@@ -219,12 +247,13 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -------------------------------------------------
--- TOOL EQUIP (FIXED)
+-- TOOL EQUIP
 -------------------------------------------------
 Char.ChildAdded:Connect(function(child)
 	if child:IsA("Tool") and child:GetAttribute("isGun") then
 		CurrentGunObject = nil
 		CurrentGunId = nil
+		TriedToShootEmpty = false
 
 		local gunId = child:GetAttribute("Id")
 		if gunId then

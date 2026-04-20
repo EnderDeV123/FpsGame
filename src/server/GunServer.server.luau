@@ -2,7 +2,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+-- 🔥 KEEP THIS (IMPORTANT)
 local ShootServer = require(ServerScriptService.Services.ShootServiceServer)
+
 local SoundService = require(ServerScriptService.Services.SoundService)
 local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
 local PlayerAmmoData = require(ReplicatedStorage.Shared.PlayerData.PlayerAmmoData)
@@ -61,7 +63,7 @@ local function SendAmmo(player, gunId)
 end
 
 -------------------------------------------------
--- RELOAD
+-- RELOAD (CLIENT CONTROLS TIMING)
 -------------------------------------------------
 local function ReloadGun(player, gunId)
 	local gunData = GetGunById(gunId)
@@ -73,6 +75,11 @@ local function ReloadGun(player, gunId)
 	if not ammoData then
 		return
 	end
+
+	local SoundId = gunData.actualGun.SFX.RealodSound
+	local PlayerChar = player.Character or player.CharacterAdded:Wait()
+
+	SoundService:PlaySound(SoundId, PlayerChar)
 
 	local maxAmmo = gunData.actualGun.MaxAmmo
 	local needed = maxAmmo - ammoData.Current
@@ -88,6 +95,11 @@ local function ReloadGun(player, gunId)
 
 	SendAmmo(player, gunId)
 end
+
+-------------------------------------------------
+-- FIRE RATE LIMIT
+-------------------------------------------------
+local ShootDebounce = {}
 
 -------------------------------------------------
 -- SHOOT
@@ -107,11 +119,20 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 		return
 	end
 
-	-- 🔥 HARD BLOCK
+	-- 🔥 DEBOUNCE (FIX DOUBLE SHOT)
+	ShootDebounce[player] = ShootDebounce[player] or {}
+
+	local now = tick()
+	local lastShot = ShootDebounce[player][gunId] or 0
+	local cooldown = gunData.actualGun.DebounceTime or 0.2
+
+	if now - lastShot < cooldown then
+		return
+	end
+	ShootDebounce[player][gunId] = now
+
+	-- 🔥 NO AMMO
 	if ammoData.Current <= 0 then
-		if ammoData.Reserve > 0 then
-			ReloadGun(player, gunId)
-		end
 		return
 	end
 
@@ -125,35 +146,24 @@ ShootEvent.OnServerEvent:Connect(function(player, origin, direction, gunId)
 
 	local damage = gunData.actualGun.Damage or 10
 
-	-- shoot logic
+	-- 🔥 THIS IS YOUR SYSTEM (UNCHANGED, IMPORTANT)
 	ShootServer:Shoot(player, origin, direction, 1000, damage)
 
 	-- visuals
 	ShootEvent:FireAllClients(origin, direction)
 
+	-- sound
 	local SoundID = gunData.actualGun.SFX.Shoot
-	local PlayerChar = player.Character or player.CharacterAdded:Wait()
+	SoundService:PlaySound(SoundID, char)
 
-	SoundService:PlaySound(SoundID, PlayerChar)
-
-	-- update UI
 	SendAmmo(player, gunId)
-
-	-- auto reload
-	if ammoData.Current <= 0 and ammoData.Reserve > 0 then
-		task.delay(1.5, function()
-			ReloadGun(player, gunId)
-		end)
-	end
 end)
 
 -------------------------------------------------
 -- RELOAD EVENT
 -------------------------------------------------
 ReloadEvent.OnServerEvent:Connect(function(player, gunId)
-	task.delay(1.5, function()
-		ReloadGun(player, gunId)
-	end)
+	ReloadGun(player, gunId)
 end)
 
 -------------------------------------------------
@@ -173,8 +183,9 @@ UpdateAmmoRequestEvent.OnServerEvent:Connect(function(player, tool)
 end)
 
 -------------------------------------------------
--- PLAYER CLEANUP
+-- CLEANUP
 -------------------------------------------------
 Players.PlayerRemoving:Connect(function(player)
 	PlayerAmmo[player] = nil
+	ShootDebounce[player] = nil
 end)

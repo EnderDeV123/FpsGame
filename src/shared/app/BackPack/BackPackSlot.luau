@@ -10,6 +10,7 @@ type SlotProps = {
 	Selected: boolean?,
 	OnClick: (() -> ())?,
 	Tool: Tool?,
+	LayoutOrder: Enum.SortOrder,
 }
 
 local function Slot(props: SlotProps)
@@ -32,7 +33,8 @@ local function Slot(props: SlotProps)
 		Size = UDim2.new(1, 0, 0, 50),
 		Text = "",
 		BackgroundColor3 = props.Selected and Color3.fromRGB(80, 120, 255) or Color3.fromRGB(40, 40, 40),
-
+		BackgroundTransparency = 0.7,
+		LayoutOrder = props.LayoutOrder,
 		[React.Event.Activated] = function()
 			if props.OnClick then
 				props.OnClick()

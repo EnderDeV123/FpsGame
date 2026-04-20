@@ -17,16 +17,34 @@ type BackPackProps = {
 }
 
 local function BackPack(props: BackPackProps)
-	-- ------------------------
-	-- HOOKS (always at top)
-	-- ------------------------
+	------------------------------------
+	-- STATE
+	------------------------------------
 	local selectedSlot, setSelectedSlot = useState(1)
 	local data, setData = useState(nil)
-	local backpack = props.Player:WaitForChild("Backpack")
+	local backpack, setBackpack = useState(nil)
 
-	-- ------------------------
-	-- EFFECT: Listen for server data
-	-- ------------------------
+	------------------------------------
+	-- BACKPACK INIT (NO YIELD)
+	------------------------------------
+	useEffect(function()
+		local bp = props.Player:FindFirstChild("Backpack")
+		if bp then
+			setBackpack(bp)
+		else
+			local conn
+			conn = props.Player.ChildAdded:Connect(function(child)
+				if child.Name == "Backpack" then
+					setBackpack(child)
+					conn:Disconnect()
+				end
+			end)
+		end
+	end, { props.Player })
+
+	------------------------------------
+	-- SERVER DATA
+	------------------------------------
 	useEffect(function()
 		local connection = SendDataToClient.OnClientEvent:Connect(function(receivedData)
 			setData(receivedData)
@@ -37,69 +55,64 @@ local function BackPack(props: BackPackProps)
 		end
 	end, {})
 
-	-- ------------------------
-	-- HELPER: Get tool by name
-	-- ------------------------
+	------------------------------------
+	-- HELPERS
+	------------------------------------
 	local function getTool(toolName: string?)
-		if not toolName then
+		if not toolName or not backpack then
 			return nil
 		end
 		return backpack:FindFirstChild(toolName)
 	end
 
-	-- ------------------------
-	-- HELPER: Select slot
-	-- ------------------------
-	local function selectSlot(index: number)
-		setSelectedSlot(index)
-	end
-
-	-- ------------------------
-	-- HELPER: Equip tool safely
-	-- ------------------------
 	local function equipTool(tool: Tool?)
 		if not tool then
 			return
 		end
 
-		local char = props.Player.Character or props.Player.CharacterAdded:Wait()
+		local char = props.Player.Character
 		if not char then
 			return
 		end
 
-		local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
 		if humanoid then
 			humanoid:EquipTool(tool)
 		end
 	end
 
-	-- ------------------------
-	-- NUMERIC KEYS INPUT
-	-- ------------------------
+	local function selectSlot(index: number)
+		setSelectedSlot(index)
+	end
+
+	------------------------------------
+	-- INPUT (FIXED)
+	------------------------------------
 	useEffect(function()
-		local connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-			if gameProcessed then
+		local connection = UserInputService.InputBegan:Connect(function(input, gp)
+			if gp then
 				return
 			end
+			if not data then
+				return
+			end
+
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				local keyValue = input.KeyCode.Value
 				local oneValue = Enum.KeyCode.One.Value
-				local threeValue = Enum.KeyCode.Three.Value -- only 1-3
+				local threeValue = Enum.KeyCode.Three.Value
 
 				if keyValue >= oneValue and keyValue <= threeValue then
-					local numberPressed = keyValue - oneValue + 1
-					selectSlot(numberPressed)
+					local index = keyValue - oneValue + 1
+					selectSlot(index)
 
-					if not data then
-						return
-					end
 					local items = {
-						getTool(data.GunInventory.MainGun),
-						getTool(data.GunInventory.SecondaryGun),
-						getTool(data.GunInventory.MedKit),
+						getTool(data.GunInventory.MainGun), -- Sniper
+						getTool(data.GunInventory.SecondaryGun), -- Pistol
+						getTool(data.GunInventory.MedKit), -- MedKit
 					}
 
-					equipTool(items[numberPressed])
+					equipTool(items[index])
 				end
 			end
 		end)
@@ -107,43 +120,46 @@ local function BackPack(props: BackPackProps)
 		return function()
 			connection:Disconnect()
 		end
-	end, {})
+	end, { data, backpack })
 
-	-- ------------------------
-	-- EARLY RETURN IF DATA NOT READY
-	-- ------------------------
+	------------------------------------
+	-- EARLY RETURN
+	------------------------------------
 	if not data then
 		return e("Frame", { BackgroundTransparency = 1 })
 	end
 
-	-- ------------------------
-	-- PRIORITY & ITEMS
-	-- ------------------------
-	local priority = { MainGun = 1, SecondaryGun = 2, MedKit = 3 }
+	------------------------------------
+	-- FIXED ORDER (SNIPER → PISTOL → MEDKIT)
+	------------------------------------
 	local items = {
-		{ name = data.GunInventory.MainGun, key = "MainGun" },
-		{ name = data.GunInventory.SecondaryGun, key = "SecondaryGun" },
-		{ name = data.GunInventory.MedKit, key = "MedKit" },
+		{ name = data.GunInventory.MainGun },
+		{ name = data.GunInventory.SecondaryGun },
+		{ name = data.GunInventory.MedKit },
 	}
 
-	-- ------------------------
-	-- BUILD UI
-	-- ------------------------
+	------------------------------------
+	-- UI BUILD
+	------------------------------------
 	local children = {
-		UIListLayout = e("UIListLayout", {
-			FillDirection = Enum.FillDirection.Vertical,
+		Grid = e("UIGridLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			FillDirectionMaxCells = 3,
+
 			SortOrder = Enum.SortOrder.LayoutOrder,
-			Padding = UDim.new(0, 5),
+
+			CellPadding = UDim2.new(0, 5, 0, 5),
+			CellSize = UDim2.fromScale(0.25, 1), -- ✅ FIX
+
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			VerticalAlignment = Enum.VerticalAlignment.Top,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}),
 	}
 
 	for i, item in ipairs(items) do
-		local layoutOrder = priority[item.key] or 999
 		children["Slot_" .. i] = e(BackPackSlot, {
 			Name = item.name,
-			LayoutOrder = layoutOrder,
+			LayoutOrder = i,
 			Selected = selectedSlot == i,
 			OnClick = function()
 				selectSlot(i)
@@ -153,13 +169,15 @@ local function BackPack(props: BackPackProps)
 		})
 	end
 
-	-- ------------------------
-	-- RETURN ROOT FRAME
-	-- ------------------------
+	------------------------------------
+	-- ROOT FRAME (SMALL HEIGHT)
+	------------------------------------
 	return e("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.877, 0.583),
-		Size = UDim2.fromScale(0.3, 0.4),
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.fromScale(0.5, 1),
+
+		Size = UDim2.fromScale(0.5, 0.13), -- ✅ SMALL HEIGHT (FPS STYLE)
+
 		BackgroundTransparency = 1,
 	}, children)
 end
