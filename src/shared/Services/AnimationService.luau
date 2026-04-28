@@ -9,6 +9,7 @@ end
 function AnimationService:PlayAnimations(AnimationId: number, Animator: Animator)
 	local Animation = Instance.new("Animation")
 	Animation.AnimationId = "rbxassetid://" .. AnimationId
+	Animation:SetAttribute("ViewModelAnimation", true)
 
 	local Track = Animator:LoadAnimation(Animation)
 	Track:Play()

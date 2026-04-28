@@ -4,15 +4,13 @@ local Players = game:GetService("Players")
 
 local Gun = require(ReplicatedStorage.Shared.Classes.Gun)
 local GunConfig = require(ReplicatedStorage.Shared.Configs.GunConfig)
+local AnimationService = require(ReplicatedStorage.Shared.Services.AnimationService)
 
 local RemotesFolder = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")
 local ShootEvent = RemotesFolder:WaitForChild("ShootEvent")
 local ReloadEvent = RemotesFolder:WaitForChild("ReloadEvent")
 local UpdateAmmoEvent = RemotesFolder:WaitForChild("UpdateAmmoEvent")
 local UpdateAmmoRequestEvent = RemotesFolder:WaitForChild("UpdateAmmoRequestEvent")
-local GetDebounceBindable = RemotesFolder:WaitForChild("GetDebounceBindable")
-local GetShootBindable = RemotesFolder:WaitForChild("GetShootBindable")
-local GetReloadBindable = RemotesFolder:WaitForChild("GetReloadBindable")
 
 local Player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
@@ -121,8 +119,6 @@ local function StartReload(gunId)
 
 	local reloadTime = gunData.actualGun.ReloadTime or 1.5
 
-	GetReloadBindable:Fire(gunData.actualGun.Animations.ReloadAnimation)
-
 	task.delay(reloadTime, function()
 		if not Player.Character then
 			return
@@ -186,7 +182,6 @@ local function ShootLoop()
 		-- FIRE
 		if CurrentGunObject and CurrentGunObject.Fire then
 			CurrentGunObject:Fire(tool)
-			GetShootBindable:Fire(gunData.actualGun.Animations.ShootAnimation)
 		end
 
 		local origin = Camera.CFrame.Position
@@ -195,8 +190,6 @@ local function ShootLoop()
 		ShootEvent:FireServer(origin, direction, gunId)
 
 		ApplyRecoil(gunData.actualGun.recoil or 0.2)
-
-		GetDebounceBindable:Fire(gunData.actualGun.Animations.DebounceAnimation)
 
 		task.delay(gunData.actualGun.DebounceTime or 0.2, function()
 			CanShoot = true
@@ -246,6 +239,18 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
+local function GetAnimator()
+	if not Char then
+		return nil
+	end
+	local humanoid = Char:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return nil
+	end
+	return humanoid:FindFirstChildOfClass("Animator")
+end
+
+local HoldTrack = nil
 -------------------------------------------------
 -- TOOL EQUIP
 -------------------------------------------------
@@ -255,9 +260,46 @@ Char.ChildAdded:Connect(function(child)
 		CurrentGunId = nil
 		TriedToShootEmpty = false
 
+		local gunDataLocal = GetGunFromConfig(child)
+		if not gunDataLocal or not gunDataLocal.actualGun then
+			return
+		end
+
+		local animator = GetAnimator()
+		if not animator then
+			return
+		end
+
+		-- 🔥 PLAY HOLD ANIMATION
+		local holdAnimId = gunDataLocal.actualGun.Animations.HoldAnimation
+
+		if holdAnimId then
+			-- stop old one if exists
+			if HoldTrack then
+				HoldTrack:Stop()
+				HoldTrack = nil
+			end
+
+			local anim = Instance.new("Animation")
+			anim.AnimationId = "rbxassetid://" .. holdAnimId
+
+			HoldTrack = animator:LoadAnimation(anim)
+			HoldTrack.Looped = true
+			HoldTrack:Play()
+		end
+
 		local gunId = child:GetAttribute("Id")
 		if gunId then
 			UpdateAmmoRequestEvent:FireServer(child)
+		end
+	end
+end)
+
+Char.ChildRemoved:Connect(function(child)
+	if child:IsA("Tool") and child:GetAttribute("isGun") then
+		if HoldTrack then
+			HoldTrack:Stop()
+			HoldTrack = nil
 		end
 	end
 end)
